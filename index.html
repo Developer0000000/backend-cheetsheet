@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="prism.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+
+</head>
+
+<body class="line-numbers">
+
+
+  <main class="container mx-auto mt-10 mb-20">
+
+    <div>
+      <h1 class="text-3xl font-bold text-center mb-10">Backend</h1>
+    </div>
+
+    <div>
+      <section>
+        <h1 class="text-3xl font-semibold">Sessions, Passport & Flash Messages initialization in App.js</h1>
+        <pre class="language-js">
+            <code>    const session = require('express-session');
+                const passport = require('passport');
+                const flash = require('connect-flash');
+
+                // session initialization
+                app.use(session({
+                  resave: false,
+                  saveUninitialized: false,
+                  secret: 'thisismysecretkey'
+                }));
+
+                // passport initialization
+                app.use(passport.initialize());
+                app.use(passport.session());
+                passport.serializeUser(usersRouter.serializeUser())
+                passport.deserializeUser(usersRouter.deserializeUser());
+
+                // flash initialization
+                app.use(flash());</code>
+            </pre>
+      </section>
+      <br>
+      <!--% user.js -->
+      <section>
+        <h1 class="text-3xl font-semibold">Users.js</h1>
+        <pre class="language-js">
+            <code>    const mongoose = require('mongoose');
+                const plm = require('passport-local-mongoose');
+                
+                mongoose.connect('mongodb://localhost:27017/*databaseName*');
+
+                const userSchema = new mongoose.Schema({
+                  username: {
+                    type: String,
+                    required: true,
+                    unique: true
+                  },
+                  fullname: {
+                    type: String,
+                    required: true
+                  },
+                  email: {
+                    type: String,
+                    required: true,
+                    unique: true
+                  },
+                  password: {
+                    type: String,
+                    // required: true
+                  },
+                  posts: [
+                    {
+                      type: mongoose.Schema.Types.ObjectId,
+                      ref: 'Post'
+                    }
+                  ]
+                });
+
+                userSchema.plugin(plm);
+
+                module.exports = mongoose.model('User', userSchema);</code>
+            </pre>
+      </section>
+      <br>
+      <!-- % posts.js -->
+      <section>
+        <h1 class="text-3xl font-semibold">Posts.js</h1>
+        <pre class="language-js">
+            <code>    const mongoose = require('mongoose');
+
+                const postSchema = new mongoose.Schema({
+                    imageUrl: {
+                        type: String,
+                        required: true
+                    },
+                    imageDescription: {
+                        type: String,
+                        required: true
+                    },
+                    userId: {
+                        type: mongoose.Schema.Types.ObjectId,
+                        ref: 'User',
+                        required: true
+                    }
+                });
+
+                module.exports = mongoose.model('Post', postSchema);</code>
+            </pre>
+      </section>
+      <br>
+      <!-- % register in EJS -->
+      <section>
+        <h1 class="text-3xl font-semibold">Register HTML</h1>
+        <pre class="language-markup">
+                <code>  &ltform action="/register" method="post" >
+                        &ltinput type="text" name="username" placeholder="username" class="detail" />&ltbr />
+                        &ltinput type="text" name="fullname" placeholder="full name" class="detail" />&ltbr />
+                        &ltinput type="email" name="email" placeholder="email" class="detail" />&ltbr />
+                        &ltinput type="password" name="password" placeholder="password" class="detail" />
+                        &lta href="/forget" class="forget">Forgot your password?&lt/a>
+                        &ltinput type="submit" class="btn int" value="Register Account">
+                  &lt/form></code>
+            </pre>
+      </section>
+      <br>
+      <!-- % register in JS -->
+      <section>
+        <h1 class="text-3xl font-semibold">Register JS</h1>
+        <pre class="language-js">
+            <code>    router.post('/register', (req, res) => {
+
+                    const { username, email, fullname, password } = req.body;
+                    const userData = new users({ username, email, fullname });
+
+                    users.register(userData, password).then(() => {
+                      passport.authenticate("local")(req, res, () => {
+                        res.redirect('/profile')
+                    });
+
+                });</code>
+            </pre>
+      </section>
+      <br>
+      <!--% Protected Route middleware -->
+      <section>
+        <h1 class="text-3xl font-semibold">Protected Route Middleware</h1>
+        <pre class="language-js">
+            <code>const isLoggedIn = (req, res, next) => {
+
+                if (req.isAuthenticated()) return next();
+                res.redirect('/login');
+
+              };</code>
+            </pre>
+      </section>
+      <br>
+      <!-- % login in EJS -->
+      <section>
+        <h1 class="text-3xl font-semibold">Login HTML</h1>
+        <pre class="language-markup">
+                <code>  &ltform action="/login" method="post">
+                        &ltinput type="text" name="username" placeholder="username" class="detail" /> &ltbr />
+                        &ltinput type="password" name="password" placeholder="password" class="detail" />
+                        &lta href="/forget" class="forget">Forgot your password? &lt/a>
+                        &ltinput type="submit" class="btn int" value="Login Account">
+                  &lt/form></code>
+            </pre>
+      </section>
+      <br>
+      <!-- % login in JS -->
+      <section>
+        <h1 class="text-3xl font-semibold">Login Post Method</h1>
+        <pre class="language-js">
+            <code>  const passport = require('passport');
+              const localStrategy = require('passport-local');
+  
+              passport.use(new localStrategy(users.authenticate()));
+
+              router.post('/login', passport.authenticate('local', {
+
+                  successRedirect: '/profile',
+                  failureRedirect: '/login',
+                  failureFlash: true,
+
+              }), (req, res) => { });</code>
+            </pre>
+      </section>
+      <br>
+      <section>
+        <h1 class="text-3xl font-semibold">Login Get Method and Flash Message</h1>
+        <pre class="language-js">
+            <code>  router.get('/login', (req, res) => {
+              // console.log(req.flash('error'));
+              res.render('login', { title: 'Login', error: req.flash('error') });
+            });</code>
+            </pre>
+      </section>
+      <br>
+      <!-- % Login EJS -->
+      <section>
+        <h1 class="text-3xl font-semibold">Login EJS</h1>
+        <pre class="language-js">
+            <code>  <% if(error.length !== 0) { %>
+              &ltp class="error">
+                 <%= error %>
+              &lt/p>
+              <% } %></code>
+            </pre>
+      </section>
+      <br>
+      <!-- % logout in JS -->
+      <section>
+        <h1 class="text-3xl font-semibold">Logout JS</h1>
+        <pre class="language-js">
+            <code>  router.get('/logout', (req, res, next) => {
+
+                    req.logout((err) => {
+                      if (err) return next(err);
+                      res.redirect('/login');
+                    });
+
+              });</code>
+        </pre>
+      </section>
+      <br>
+      <!-- % multer.js  -->
+      <section>
+        <h1 class="text-3xl font-semibold">Multer.js</h1>
+        <pre class="language-js">
+            <code>    const multer = require("multer")
+                const { v4: uuidv4 } = require("uuid");
+                const  path  = require("path");
+
+                const storage = multer.diskStorage({
+
+                    destination: function (req, file, cb) {
+                        cb(null, './public/images/uploads');
+                    },
+                    filename: function (req, file, cb) {
+                        const uniqueFilename = uuidv4();
+                        cb(null, uniqueFilename + path.extname(file.originalname));
+                    }
+
+                });
+
+                const upload = multer({ storage: storage });
+                module.exports = upload;</code>
+            </pre>
+      </section>
+      <br>
+      <!-- % Upload in Js  -->
+      <section>
+        <h1 class="text-3xl font-semibold">Upload JS</h1>
+        <pre class="language-js">
+            <code>  router.post('/upload', isLoggedIn, upload.single('file'), async (req, res) => {
+
+                  if (!req.file) res.status(404).send('File not Found');
+
+                  let user = await users.findOne({ username: req.session.passport.user });
+
+                  let post = await posts.create({
+                    imageUrl: req.file.filename,
+                    imageDescription: req.body.filecaption,
+                    userId: user._id
+                  });
+
+                  user.posts.push(post._id);
+                  await user.save();
+                
+                  res.redirect('/profile');
+              
+              });</code>
+            </pre>
+      </section>
+      <br>
+      <!-- % Upload in EJS -->
+      <section>
+        <h1 class="text-3xl font-semibold">Upload Html</h1>
+        <pre class="language-html">
+            <code>  &ltdiv class="upload_pins">
+                  &lth1>Upload pins</h1>
+                  &ltform class="form_upload" action="/upload" method="post" enctype="multipart/form-data">
+                      &ltinput type="text" required name="filecaption" placeholder="description...">
+                      &ltdiv class="flex">
+                          &ltinput type="file" required name="file" id="file_upload">
+                          &ltdiv class="btn">
+                              &ltbutton type="submit" class="msg">Upload &lt/button>
+                          &lt/div>
+                      &lt/div>
+                  &lt/form>
+              &lt/div>
+            
+                <% if(posts.length> 0) { %>
+
+                  <% posts.forEach((post)=>{ %>
+
+                      // html code
+
+                  <% }) %>
+
+                <% } %></code>
+            </pre>
+      </section>
+      <br>
+      <!-- % index.js  -->
+      <section>
+        <h1 class="text-3xl font-semibold">index.js</h1>
+        <pre class="language-js">
+            <code>  router.get('/', (req, res) => {
+                res.render('index', { title: 'Register' });
+              });
+              
+              router.get('/feed', (req, res) => {
+                res.render('feed', { title: 'Feed' });
+              });</code>
+            </pre>
+      </section>
+      <br>
+      <section>
+        <h1 class="text-3xl font-semibold">Profile in index.js</h1>
+        <pre class="language-js">
+            <code>  router.get('/profile', isLoggedIn, async (req, res) => {
+              
+                let userData = await users.findOne({ username: req.session.passport.user }).populate('posts')
+                let { username, fullname, email, posts } = userData;
+              
+                res.render('profile', { title: 'Profile', username, fullname, email,posts });
+
+              });</code>
+            </pre>
+      </section>
+      <br>
+    </div>
+
+  </main>
+
+
+  <script src="prism.js"></script>
+</body>
+
+</html>
